@@ -229,10 +229,6 @@ html[data-theme="light"] .qmenu .scrim{background:rgba(230,229,225,.5)}
 .qitem svg{width:20px;height:20px}
 .qitem[data-hot="1"]{background:rgb(var(--acc));color:var(--ink);border-color:transparent;transform:scale(1.22);box-shadow:0 8px 22px rgba(var(--acc),.45)}
 @keyframes qarc{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4)}to{opacity:1;transform:none}}
-.qname{position:absolute;pointer-events:none;font-size:11px;font-weight:640;color:var(--txt2);transform:translate(-50%,0);white-space:nowrap;animation:fade .4s .15s both}
-.qlabel{position:absolute;padding:8px 15px;border-radius:13px;font-size:15px;font-weight:660;background:var(--glass);border:1px solid var(--stroke);
-  white-space:nowrap;transform:translate(-50%,-50%);opacity:0;transition:opacity .2s}
-.qlabel.on{opacity:1}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 
 .sheet-host{position:fixed;inset:0;z-index:80}
@@ -369,6 +365,8 @@ html[data-theme="light"] .sheet{background:rgba(250,249,247,.93)}
 .date-hit{position:relative;text-align:left}
 .date-hit input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
 :focus-visible{outline:2px solid rgba(var(--aura-a),.9);outline-offset:2px}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05ms !important}
   .blob{animation:none !important}
@@ -732,11 +730,11 @@ const ACT={};
 /* ---------- quick add ---------- */
 const QUICK=[{k:'workout',t:'Workout',i:'train'},{k:'run',t:'Run',i:'run'},{k:'food',t:'Food',i:'food'},{k:'kcal',t:'Calories',i:'bolt'},
   {k:'water',t:'Water',i:'water'},{k:'weight',t:'Weight',i:'weight'},{k:'habit',t:'Habit',i:'habit'},{k:'note',t:'Note',i:'note'}];
-const QARC={r:182,from:188,to:92};
+const QARC={r:200,from:192,to:88};
 let dragFired=false,arcOn=false,arcHot=null,touchOpened=false;
 function buildQuick(){
   $('#fab').innerHTML=I.plus;
-  $('#qitems').innerHTML=QUICK.map(q=>`<button class="qitem" data-q="${q.k}" aria-label="${q.t}">${I[q.i]}</button>`).join('')+`<div class="qlabel" id="qlabel"></div>`;
+  $('#qitems').innerHTML=QUICK.map(q=>`<button class="qitem" data-q="${q.k}" aria-label="${q.t}">${I[q.i]}</button>`).join('');
   $('#qitems').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b||dragFired)return;toggleQuick(false);setTimeout(()=>quickAction(b.dataset.q),120);});
   $('#qmenu .scrim').addEventListener('click',()=>toggleQuick(false));
   const fab=$('#fab');
@@ -746,17 +744,13 @@ function buildQuick(){
 }
 function layoutArc(){const f=$('#fab').getBoundingClientRect(),cx=f.left+f.width/2,cy=f.top+f.height/2;
   const items=$$('.qitem'),n=items.length,step=(QARC.to-QARC.from)/(n-1);
-  $$('.qname').forEach(x=>x.remove());
   items.forEach((el,i)=>{const a=(QARC.from+step*i)*Math.PI/180,x=cx+Math.cos(a)*QARC.r,y=cy-Math.sin(a)*QARC.r;
     el.style.left=x+'px';el.style.top=y+'px';el.style.setProperty('--dx',(cx-x)+'px');el.style.setProperty('--dy',(cy-y)+'px');
-    el.style.animationDelay=(n-1-i)*22+'ms';el._c=[x,y];
-    const nm=document.createElement('div');nm.className='qname';nm.textContent=QUICK[i].t;nm.style.left=x+'px';nm.style.top=(y+28)+'px';$('#qitems').appendChild(nm);});
-  const lab=$('#qlabel');lab.style.left=cx-QARC.r*.6+'px';lab.style.top=cy-QARC.r*.6+'px';}
+    el.style.animationDelay=(n-1-i)*22+'ms';el._c=[x,y];});}
 function toggleQuick(on){haptic();arcOn=on;$('#qmenu').classList.toggle('on',on);$('#fab').classList.toggle('open',on);
   if(on){layoutArc();$$('.qitem').forEach(el=>{el.style.animation='none';void el.offsetWidth;el.style.animation='';});}else setArcHot(null);}
-function setArcHot(el){if(arcHot===el)return;if(arcHot)arcHot.removeAttribute('data-hot');arcHot=el;const lab=$('#qlabel');
-  if(el){el.setAttribute('data-hot','1');haptic();lab.textContent=(QUICK.find(q=>q.k===el.dataset.q)||{}).t||'';lab.classList.add('on');}
-  else if(lab)lab.classList.remove('on');}
+function setArcHot(el){if(arcHot===el)return;if(arcHot)arcHot.removeAttribute('data-hot');arcHot=el;
+  if(el){el.setAttribute('data-hot','1');haptic();}}
 function nearestArc(x,y){let best=null,bd=1e9;$$('.qitem').forEach(el=>{const [ix,iy]=el._c||[0,0],d=Math.hypot(x-ix,y-iy);if(d<bd){bd=d;best=el;}});return bd<56?best:null;}
 function onArcStart(e){const t=e.touches[0];let moved=false;
   if(!arcOn){touchOpened=true;toggleQuick(true);}
